@@ -5,14 +5,14 @@
 // =====================================================================
 
 (function() {
-  // 1. Configuración por defecto (puedes reemplazar estos valores con los de tu proyecto de Firebase Console)
+  // 1. Configuración por defecto vinculada al proyecto de Firebase
   const defaultFirebaseConfig = {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyBYXCB5bQebxVTMCQbQLZmWuxn2OJtLH2M",
+    authDomain: "mi-panaderia-dd7f4.firebaseapp.com",
+    projectId: "mi-panaderia-dd7f4",
+    storageBucket: "mi-panaderia-dd7f4.firebasestorage.app",
+    messagingSenderId: "452603323199",
+    appId: "1:452603323199:web:4a341c24eeb0d31acca98a"
   };
 
   // 2. Cargar configuración guardada en localStorage si el usuario la ingresó en la app
@@ -21,7 +21,7 @@
       const raw = localStorage.getItem('dulcementa_firebase_config');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.projectId) {
+        if (parsed && parsed.projectId && parsed.apiKey && parsed.apiKey.trim() !== '') {
           return parsed;
         }
       }

@@ -19,6 +19,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     await API.detectBackend();
     updateCloudStatusIndicator();
+
+    if (API.getActiveMode() === 'firebase' && typeof FirebaseService !== 'undefined' && FirebaseService.isReady()) {
+      try {
+        const checkSettings = await FirebaseService.db.collection('settings').doc('general').get();
+        if (!checkSettings.exists) {
+          console.log('🌱 Base de datos Firestore nueva: sembrando catálogo inicial...');
+          await FirebaseService.seedInitialData(false);
+        }
+      } catch (seedErr) {
+        console.warn('Verificación de sembrado inicial:', seedErr);
+      }
+    }
+
     const settings = await API.getSettings();
     if (settings.currency_symbol) UI.currencySymbol = settings.currency_symbol;
     if (settings.bakery_name) {
@@ -35,8 +48,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshCustomersState()
   ]);
 
+  // Iniciar sincronización en vivo multi-dispositivo con Firebase
+  startRealtimeCloudSync();
+
   switchView('dashboard');
 });
+
+let _realtimeUnsub = null;
+function startRealtimeCloudSync() {
+  if (_realtimeUnsub) {
+    try { _realtimeUnsub(); } catch (_) {}
+    _realtimeUnsub = null;
+  }
+
+  if (typeof FirebaseService !== 'undefined' && FirebaseService.isReady()) {
+    _realtimeUnsub = FirebaseService.subscribeRealtime(async (coll) => {
+      console.log(`🔄 Sincronización en vivo: cambio detectado en la nube (${coll})`);
+      await Promise.all([
+        refreshInventoryState(),
+        refreshProductsState(),
+        refreshCustomersState()
+      ]);
+      if (AppState.currentView === 'dashboard') loadDashboard();
+      else if (AppState.currentView === 'inventory') loadInventory();
+      else if (AppState.currentView === 'production') loadProduction();
+      else if (AppState.currentView === 'orders') loadOrders();
+      else if (AppState.currentView === 'customers') loadCustomers();
+      else if (AppState.currentView === 'metrics') loadMetrics();
+    });
+  }
+}
 
 // Navegación entre Vistas
 function switchView(viewName, filterParam = null) {
@@ -1463,6 +1504,7 @@ async function saveFirebaseConfig(e) {
   UI.showToast('Configuración de datos actualizada', 'success');
   UI.closeModal('modal-firebase');
   updateCloudStatusIndicator();
+  startRealtimeCloudSync();
 
   if (AppState.currentView === 'dashboard') loadDashboard();
   else if (AppState.currentView === 'inventory') loadInventory();
