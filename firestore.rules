@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para Dulce Menta Bakery System
+    // En modo inicial/desarrollo permite lectura y escritura a las colecciones del sistema
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
